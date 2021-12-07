@@ -18,6 +18,7 @@ class TarefaController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+
     public function index()
     {
         if(auth()->check()) {
@@ -37,7 +38,7 @@ class TarefaController extends Controller
      */
     public function create()
     {
-        //
+        return view('tarefa.create');
     }
 
     /**
@@ -48,7 +49,17 @@ class TarefaController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $regras = [
+            'tarefa' => 'required|min:3:max:200'
+        ];
+        $feedback = [
+            'required' => 'O campo :attribute não pode ficar vazio',
+            'tarefa.min' => 'O campo :attribute não pode ter menos de 3 caracteres',
+            'tarefa.max' => 'O campo :attribute não pode ter mais de 200 caracteres'
+        ];
+        $request->validate($regras,$feedback);
+        $tarefa = Tarefa::create($request->all());
+        return redirect()->route('tarefa.show',['tarefa' => $tarefa->id]);
     }
 
     /**
@@ -59,7 +70,7 @@ class TarefaController extends Controller
      */
     public function show(Tarefa $tarefa)
     {
-        //
+        dd($tarefa->getAttributes());
     }
 
     /**
