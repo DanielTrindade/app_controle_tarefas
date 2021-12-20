@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+
+use Mail;
+use App\Mail\NovaTarefaMail;
 use App\Models\Tarefa;
 use Illuminate\Http\Request;
 
@@ -21,14 +24,9 @@ class TarefaController extends Controller
 
     public function index()
     {
-        if(auth()->check()) {
-            $id = auth()->user()->id;
-            $nome = auth()->user()->nome;
-            $email = auth()->user()->email;
-            return  "O usuário $nome com email $email com e id $id está logado!";
-        } else {
-            return  'Usuário precisa fazer login'; 
-        }
+        $user_id = auth()->user()->id;
+        $tarefas = Tarefa::where('user_id', $user_id)->paginate(10);
+        return view('tarefa.index',['tarefas' => $tarefas]);
     }
 
     /**
@@ -49,6 +47,8 @@ class TarefaController extends Controller
      */
     public function store(Request $request)
     {
+        $dados = $request->all('tarefa','data_limite_conclusao');
+        $dados['user_id'] = auth()->user()->id;
         $regras = [
             'tarefa' => 'required|min:3:max:200'
         ];
@@ -58,7 +58,10 @@ class TarefaController extends Controller
             'tarefa.max' => 'O campo :attribute não pode ter mais de 200 caracteres'
         ];
         $request->validate($regras,$feedback);
-        $tarefa = Tarefa::create($request->all());
+        $tarefa = Tarefa::create($dados);
+        $destinatario = auth()->user()->email; //email do usuario logado
+        Mail::to($destinatario)->send(new NovaTarefaMail($tarefa));
+
         return redirect()->route('tarefa.show',['tarefa' => $tarefa->id]);
     }
 
@@ -70,7 +73,7 @@ class TarefaController extends Controller
      */
     public function show(Tarefa $tarefa)
     {
-        dd($tarefa->getAttributes());
+        return view('tarefa.show',['tarefa' => $tarefa]);
     }
 
     /**
