@@ -9,6 +9,7 @@ use App\Models\Tarefa;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\TarefasExport;
+use PDF;
 
 class TarefaController extends Controller
 {
@@ -124,7 +125,21 @@ class TarefaController extends Controller
         $tarefa->delete();
         return redirect()->route('tarefa.index');
     }
-    public function exportacao() {
-        return Excel::download(new TarefasExport, 'lista_de_tarefas.xlsx');
+    public function exportacao($extensao) {
+        $nomeDoArquivo = 'lista_de_tarefas.';
+        if(in_array($extensao,['xlsx', 'csv', 'pdf'])) {
+            return Excel::download(new TarefasExport, 'lista_de_tarefas.'.$extensao);
+        }
+        return redirect()->route('tarefa.index');   
+    }
+    public function exportar() {
+        $tarefas = auth()->user()->tarefas()->get();
+        $pdf = PDF::loadView('tarefa.pdf', ['tarefas' => $tarefas]);
+        //return $pdf->download('lista_de_tarefas.pdf'); força o download
+        //retorna uma stream e deixa para o usuário o que ele quer fazer
+        return $pdf->stream_bucket_append('lista_de_tarefas.pdf');
+        /*controlar o tipo de papel e o formato de impressão
+        $pdf->setPaper('a4','landscape'); (tipo de papel e formato)
+        */
     }
 }
